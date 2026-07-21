@@ -5,9 +5,11 @@ print_separator() {
 check_network(){
 	if 	ping -c 1 1.1.1.1 > /dev/null 2>&1 
 		then
-			echo -e "${GREEN}Internet: OK${RESET}"
+			echo -e "Internet: ${GREEN}OK${RESET}"
+			print_separator
 	else
-			echo -e "${RED}Internet: DOWN${RESET}"
+			echo -e "Internet: ${RED}DOWN${RESET}"
+			print_separator
 	fi
 }
 print_title(){
@@ -16,10 +18,14 @@ print_title(){
 check_service(){
 	if systemctl is-active --quiet "$1" 
 	then
-		echo "OK"
+		echo -e "${GREEN}OK${RESET}"
 	else
-		echo "DOWN"
+		echo -e "${RED}DOWN${RESET}"
 	fi
+}
+print_section() {
+    echo -e "$1"
+	print_separator
 }
 GREEN="\e[32m"
 RED="\e[31m"
@@ -27,36 +33,26 @@ RESET="\e[0m"
 USER=$(whoami)
 HOST=$(hostname)
 KERNEL=$(uname -r)
-UPTIME=$(uptime | awk '{print $3}')
+UPTIME=$(uptime -p)
 DISK=$(df --total | tail -n 1 | awk '{print $5}')
 FREE=$(free --giga | awk 'NR == 2{print $3}')
 TOTAL=$(free --giga | awk 'NR == 2{print $2}')
 JOURNALERRORS=$(journalctl -p err -b | wc -l)
-print_separator
-echo "HEALTH CHECK BY PAWEL"
-print_separator
+print_section "HEALTH CHECK BY PAWEL"
 echo ""
 print_title "SYSTEM"
-echo "User: $USER"
-print_separator
-echo "Hostname: $HOST"
-print_separator
-echo "Kernel: $KERNEL"
-print_separator
-echo "Uptime: $UPTIME"
+print_section "User: ${RED}$USER${RESET}"
+print_section "Hostname: $HOST"
+print_section "Kernel: $KERNEL"
+print_section "Uptime: $UPTIME"
 print_title "MEMORY"
-echo "Disk: / -> $DISK"
-print_separator
-echo "Memory: ${FREE}GB / ${TOTAL}GB"
+print_section "Disk: / -> $DISK"
+print_section "Memory: ${FREE}GB / ${TOTAL}GB"
 print_title "SERVICES"
-echo "NetworkManager: $(check_service NetworkManager)"
-print_separator
 check_network
-print_separator
-echo "Journal Errors: $JOURNALERRORS"
-print_separator
-echo "SSHD: $(check_service sshd)"
-print_separator
-echo "Bluetooth: $(check_service bluetooth)"
-print_separator
-echo "Cups: $(check_service cups)"
+print_section "Journal Errors: $JOURNALERRORS"
+for service in NetworkManager bluetooth cups sshd
+do
+    echo "$service: $(check_service "$service")"
+	print_separator
+done
